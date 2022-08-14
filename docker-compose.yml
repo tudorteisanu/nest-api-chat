@@ -1,0 +1,46 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:14.2-alpine
+    restart: unless-stopped
+    container_name: db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    networks:
+      - web
+    expose:
+      - 5432
+    ports:
+      - "5432:5432"
+#  db:
+#    image: mysql
+#    restart: unless-stopped
+#    tty: true
+#    ports:
+#      - "3306:3306"
+#    environment:
+#      MYSQL_DATABASE: ${DB_NAME}
+#      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+#      SERVICE_TAGS: dev
+#      SERVICE_NAME: mysql
+
+#    networks:
+#      - web
+
+  api:
+    build:
+      context: .
+      dockerfile: 'codedeploy/Dockerfile'
+    ports:
+      - '4000:4000'
+    env_file:
+      - .env
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
