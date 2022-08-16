@@ -16,11 +16,14 @@ export class AuthMiddleware implements NestMiddleware {
     const authHeaders: any = req.headers.authorization;
 
     if (authHeaders) {
-      req.user = await this.authService.getUserByToken(authHeaders);
+      const user = await this.authService.getUserByToken(authHeaders);
 
-      if (!req.user) {
+      if (!user) {
         throw new HttpException('User not found.', HttpStatus.UNAUTHORIZED);
       }
+
+      this.authService.userEvent.next(user);
+      req.user = user;
     } else {
       throw new UnauthorizedException();
     }

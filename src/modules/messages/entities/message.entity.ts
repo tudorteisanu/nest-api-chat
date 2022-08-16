@@ -4,7 +4,13 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
+import { Room } from 'src/modules/rooms/entities/room.entity';
+import { User } from '../../users/entities/user.entity';
+import { FileEntity } from '../../file/entities/file.entity';
 
 @Entity('message')
 export class MessageEntity {
@@ -18,4 +24,14 @@ export class MessageEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToOne(() => Room, (room) => room.messages)
+  room: Room;
+
+  @ManyToOne(() => User, (user) => user.messages)
+  author: User;
+
+  @ManyToMany(() => FileEntity)
+  @JoinTable()
+  attachments: FileEntity[];
 }

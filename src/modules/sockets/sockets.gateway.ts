@@ -2,10 +2,12 @@ import {
   WebSocketGateway,
   SubscribeMessage,
   MessageBody,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { SocketsService } from './sockets.service';
 import { CreateSocketDto } from './dto/create-socket.dto';
 import { UpdateSocketDto } from './dto/update-socket.dto';
+import { AuthService } from '../auth/auth.service';
 
 @WebSocketGateway({
   cors: {
@@ -14,21 +16,33 @@ import { UpdateSocketDto } from './dto/update-socket.dto';
   cookie: true,
 })
 export class SocketsGateway {
-  constructor(private readonly socketsService: SocketsService) {}
+  @WebSocketServer() server;
+
+  constructor(
+    private readonly socketsService: SocketsService,
+    private authService: AuthService,
+  ) {}
 
   @SubscribeMessage('sendMessage')
-  create(@MessageBody() createSocketDto: CreateSocketDto) {
-    return this.socketsService.create(createSocketDto);
+  async create(client: any, createSocketDto: CreateSocketDto) {
+    if (client.handshake.auth?.token) {
+      const author = await this.authService.getUserByToken(
+        client.handshake.auth.token,
+      );
+
+      const { event, data } = await this.socketsService.create({
+        ...createSocketDto,
+        author,
+      });
+      this.server.emit(event, data);
+    }
   }
 
   @SubscribeMessage('connection')
   handleConnection(client: any) {
-    console.log('connected', client.handshake.auth);
-  }
-
-  @SubscribeMessage('disconnection')
-  handleDisconnect(client: any) {
-    console.log('disconnection', client);
+    if (!client.handshake.auth) {
+      client.disconnect();
+    }
   }
 
   @SubscribeMessage('findAllSockets')

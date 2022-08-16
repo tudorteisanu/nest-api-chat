@@ -5,4 +5,8 @@ export class CreateMessageDto {
   @IsNotEmpty()
   @ApiProperty()
   message: string;
+
+  @IsNotEmpty()
+  @ApiProperty()
+  roomId: number;
 }

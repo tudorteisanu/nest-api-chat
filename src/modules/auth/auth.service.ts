@@ -13,11 +13,14 @@ import * as bcrypt from 'bcrypt';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { MailViews } from 'src/ts/enum';
 import { GoogleMailService } from 'src/services/google-mail/google-mail.service';
+import { BehaviorSubject } from 'rxjs';
 
 const secret = 'some_secret';
 
 @Injectable()
 export class AuthService {
+  userEvent: BehaviorSubject<any> = new BehaviorSubject(null);
+
   constructor(
     private userService: UsersService,
     private jwtService: JwtService,

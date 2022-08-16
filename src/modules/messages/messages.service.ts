@@ -15,13 +15,32 @@ export class MessagesService {
     @InjectRepository(MessageEntity)
     private messageRepository: Repository<MessageEntity>,
   ) {}
+
   async create(payload: CreateMessageDto) {
-    const newRoom = await this.messageRepository.create(payload);
-    return await this.messageRepository.save(newRoom);
+    return await this.messageRepository.save(payload);
   }
 
-  findAll() {
-    return this.messageRepository.find();
+  async findAll(roomId: number) {
+    const items = await this.messageRepository.find({
+      where: {
+        room: {
+          id: roomId,
+        },
+      },
+      relations: {
+        room: true,
+        author: true,
+        attachments: true,
+      },
+    });
+
+    return items.map((item: any) => ({
+      ...item,
+      attachments: item.attachments.map((file: any) => ({
+        ...file,
+        url: `${process.env.APP_HOST}/${file.filename}`,
+      })),
+    }));
   }
 
   async findOne(id: number) {

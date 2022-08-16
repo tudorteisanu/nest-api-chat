@@ -11,8 +11,6 @@ export class FileEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  fieldname: string;
-
   @Column()
   originalname: string;
 

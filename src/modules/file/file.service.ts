@@ -14,7 +14,7 @@ export class FileService {
   ) {}
 
   async create(payload: CreateFileDto) {
-    const file = await this.fileRepository.create({
+    const file = await this.fileRepository.save({
       ...payload,
       path: `${process.env.FILE_UPLOAD_FOLDER}/${payload.filename}`,
     });
