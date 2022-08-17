@@ -6,8 +6,14 @@ import {
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityNotFoundError, Repository } from 'typeorm';
+import { EntityNotFoundError, Repository, UpdateResult } from 'typeorm';
 import { Room } from './entities/room.entity';
+import {
+  PaginationInterface,
+  PaginationMetaInterface,
+  RoomInterface,
+} from 'src/ts/interfaces';
+import { DEFAULT_PAGINATION_CONFIG } from 'src/ts/consts';
 
 @Injectable()
 export class RoomsService {
@@ -15,16 +21,42 @@ export class RoomsService {
     @InjectRepository(Room)
     private roomsRepository: Repository<Room>,
   ) {}
-  async create(createRoomDto: CreateRoomDto) {
+
+  async create(createRoomDto: CreateRoomDto): Promise<RoomInterface> {
     const newRoom = await this.roomsRepository.create(createRoomDto);
     return await this.roomsRepository.save(newRoom);
   }
 
-  findAll() {
-    return this.roomsRepository.find();
+  async findAll(
+    pagination: PaginationMetaInterface,
+  ): Promise<PaginationInterface<RoomInterface>> {
+    const { itemsPerPage, page } = {
+      ...DEFAULT_PAGINATION_CONFIG,
+      ...pagination,
+    };
+    const take = itemsPerPage;
+    const skip = (page - 1) * itemsPerPage;
+    const items = await this.roomsRepository.find({
+      take,
+      skip,
+      order: {
+        id: 'ASC',
+      },
+    });
+
+    const total = await this.roomsRepository.count();
+
+    return {
+      data: items.reverse(),
+      meta: {
+        page,
+        itemsPerPage,
+        total,
+      },
+    };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number): Promise<RoomInterface> {
     try {
       return await this.roomsRepository.findOneByOrFail({ id });
     } catch (e) {
@@ -34,7 +66,10 @@ export class RoomsService {
     }
   }
 
-  async update(id: number, updateRoomDto: UpdateRoomDto) {
+  async update(
+    id: number,
+    updateRoomDto: UpdateRoomDto,
+  ): Promise<UpdateResult> {
     try {
       await this.roomsRepository.findOneByOrFail({ id });
       return await this.roomsRepository.update(id, updateRoomDto);
@@ -46,7 +81,7 @@ export class RoomsService {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<RoomInterface> {
     try {
       const room = await this.roomsRepository.findOneByOrFail({ id });
       return await this.roomsRepository.remove(room);

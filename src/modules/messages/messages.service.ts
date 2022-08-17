@@ -6,8 +6,14 @@ import {
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityNotFoundError, Repository } from 'typeorm';
+import { EntityNotFoundError, Repository, UpdateResult } from 'typeorm';
 import { MessageEntity } from './entities/message.entity';
+import { DEFAULT_PAGINATION_CONFIG } from 'src/ts/consts';
+import {
+  MessageInterface,
+  PaginationInterface,
+  PaginationMetaInterface,
+} from 'src/ts/interfaces';
 
 @Injectable()
 export class MessagesService {
@@ -20,12 +26,26 @@ export class MessagesService {
     return await this.messageRepository.save(payload);
   }
 
-  async findAll(roomId: number) {
+  async findAll(
+    roomId: number,
+    pagination: PaginationMetaInterface,
+  ): Promise<PaginationInterface<MessageInterface>> {
+    const { itemsPerPage, page } = {
+      ...DEFAULT_PAGINATION_CONFIG,
+      ...pagination,
+    };
+    const take = itemsPerPage;
+    const skip = (page - 1) * itemsPerPage;
     const items = await this.messageRepository.find({
+      take,
+      skip,
       where: {
         room: {
           id: roomId,
         },
+      },
+      order: {
+        id: 'DESC',
       },
       relations: {
         room: true,
@@ -33,17 +53,27 @@ export class MessagesService {
         attachments: true,
       },
     });
+    const total = await this.messageRepository.count();
 
-    return items.map((item: any) => ({
-      ...item,
-      attachments: item.attachments.map((file: any) => ({
-        ...file,
-        url: `${process.env.APP_HOST}/${file.filename}`,
-      })),
-    }));
+    return {
+      data: items
+        .map((item: any) => ({
+          ...item,
+          attachments: item.attachments.map((file: any) => ({
+            ...file,
+            url: `${process.env.APP_HOST}/${file.filename}`,
+          })),
+        }))
+        .reverse(),
+      meta: {
+        page,
+        itemsPerPage,
+        total,
+      },
+    };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number): Promise<MessageInterface> {
     try {
       return await this.messageRepository.findOneByOrFail({ id });
     } catch (e) {
@@ -53,7 +83,7 @@ export class MessagesService {
     }
   }
 
-  async update(id: number, payload: UpdateMessageDto) {
+  async update(id: number, payload: UpdateMessageDto): Promise<UpdateResult> {
     try {
       await this.messageRepository.findOneByOrFail({ id });
       return await this.messageRepository.update(id, payload);
@@ -65,7 +95,7 @@ export class MessagesService {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<MessageInterface> {
     try {
       const room = await this.messageRepository.findOneByOrFail({ id });
       return await this.messageRepository.remove(room);

@@ -6,11 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { PaginationInterface, RoomInterface } from '../../ts/interfaces';
+import { UpdateResult } from 'typeorm';
 
 @ApiBearerAuth()
 @ApiTags('rooms')
@@ -24,22 +27,42 @@ export class RoomsController {
   }
 
   @Get()
-  findAll() {
-    return this.roomsService.findAll();
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'page',
+    schema: { oneOf: [{ type: 'string' }, { type: 'integer' }] },
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'itemsPerPage',
+    required: false,
+    description: 'Items per page',
+    schema: { oneOf: [{ type: 'string' }, { type: 'integer' }] },
+    example: 10,
+  })
+  async findAll(
+    @Query('itemsPerPage') itemsPerPage = 10,
+    @Query('page') page = 1,
+  ): Promise<PaginationInterface<RoomInterface>> {
+    return await this.roomsService.findAll({ itemsPerPage, page });
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.roomsService.findOne(+id);
+  async findOne(@Param('id') id: string): Promise<RoomInterface> {
+    return await this.roomsService.findOne(+id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
-    return this.roomsService.update(+id, updateRoomDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateRoomDto: UpdateRoomDto,
+  ): Promise<UpdateResult> {
+    return await this.roomsService.update(+id, updateRoomDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.roomsService.remove(+id);
+  async remove(@Param('id') id: string): Promise<RoomInterface> {
+    return await this.roomsService.remove(+id);
   }
 }
