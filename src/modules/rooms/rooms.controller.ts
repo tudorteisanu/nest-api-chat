@@ -12,8 +12,10 @@ import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { PaginationInterface, RoomInterface } from '../../ts/interfaces';
+import { PaginationInterface } from '../../ts/interfaces';
 import { UpdateResult } from 'typeorm';
+import { Room } from './entities/room.entity';
+import { AddUserToRoomDto } from './dto/add-user-to-room.dto';
 
 @ApiBearerAuth()
 @ApiTags('rooms')
@@ -24,6 +26,22 @@ export class RoomsController {
   @Post()
   create(@Body() createRoomDto: CreateRoomDto) {
     return this.roomsService.create(createRoomDto);
+  }
+
+  @Post(':id/addUser')
+  addUserToRoom(
+    @Param('id') roomId: number,
+    @Body() createRoomDto: AddUserToRoomDto,
+  ) {
+    return this.roomsService.addUserToRoom(roomId, createRoomDto);
+  }
+
+  @Post(':id/removeUser')
+  removeUserToRoom(
+    @Param('id') roomId: number,
+    @Body() createRoomDto: AddUserToRoomDto,
+  ) {
+    return this.roomsService.removeUserToRoom(roomId, createRoomDto);
   }
 
   @Get()
@@ -44,12 +62,12 @@ export class RoomsController {
   async findAll(
     @Query('itemsPerPage') itemsPerPage = 10,
     @Query('page') page = 1,
-  ): Promise<PaginationInterface<RoomInterface>> {
+  ): Promise<PaginationInterface<Room>> {
     return await this.roomsService.findAll({ itemsPerPage, page });
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<RoomInterface> {
+  async findOne(@Param('id') id: string): Promise<Room> {
     return await this.roomsService.findOne(+id);
   }
 
@@ -62,7 +80,7 @@ export class RoomsController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<RoomInterface> {
+  async remove(@Param('id') id: string): Promise<Room> {
     return await this.roomsService.remove(+id);
   }
 }

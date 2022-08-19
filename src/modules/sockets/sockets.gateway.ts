@@ -8,6 +8,7 @@ import { SocketsService } from './sockets.service';
 import { CreateSocketDto } from './dto/create-socket.dto';
 import { UpdateSocketDto } from './dto/update-socket.dto';
 import { AuthService } from '../auth/auth.service';
+import { RoomsService } from '../rooms/rooms.service';
 
 @WebSocketGateway({
   cors: {
@@ -21,6 +22,7 @@ export class SocketsGateway {
   constructor(
     private readonly socketsService: SocketsService,
     private authService: AuthService,
+    private rooms: RoomsService,
   ) {}
 
   @SubscribeMessage('sendMessage')
@@ -34,7 +36,11 @@ export class SocketsGateway {
         ...createSocketDto,
         author,
       });
-      this.server.emit(event, data);
+
+      const { users } = await this.rooms.findOne(createSocketDto.roomId);
+      users.forEach(({ id }: { id: number }) => {
+        this.server.to(String(id)).emit(event, data);
+      });
     }
   }
 
@@ -48,6 +54,11 @@ export class SocketsGateway {
   @SubscribeMessage('findAllSockets')
   findAll() {
     return this.socketsService.findAll();
+  }
+
+  @SubscribeMessage('join')
+  join(client: any, data: string) {
+    client.join(data);
   }
 
   @SubscribeMessage('findOneSocket')
