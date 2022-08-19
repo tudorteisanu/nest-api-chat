@@ -37,7 +37,8 @@ export class SocketsGateway {
         author,
       });
 
-      const { users } = await this.rooms.findOne(createSocketDto.roomId);
+      const { users } = await this.rooms.findOne(createSocketDto.room.id);
+
       users.forEach(({ id }: { id: number }) => {
         this.server.to(String(id)).emit(event, data);
       });
