@@ -48,7 +48,6 @@ export class UsersService {
   }
 
   public search(searchString: string) {
-    console.log(searchString);
     return this.usersRepository.find({
       where: [
         { firstName: ILike(`%${searchString}%`) },

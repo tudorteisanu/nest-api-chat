@@ -73,9 +73,26 @@ export class MessagesService {
     };
   }
 
-  async findOne(id: number): Promise<MessageInterface> {
+  async findOne(id?: number): Promise<MessageInterface> {
     try {
       return await this.messageRepository.findOneByOrFail({ id });
+    } catch (e) {
+      if (e instanceof EntityNotFoundError) {
+        throw new NotFoundException('Room not found');
+      }
+    }
+  }
+
+  async getRoomLastMessage(roomId: number): Promise<MessageInterface> {
+    try {
+      return await this.messageRepository.findOne({
+        where: {
+          room: { id: roomId },
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+      });
     } catch (e) {
       if (e instanceof EntityNotFoundError) {
         throw new NotFoundException('Room not found');

@@ -1,12 +1,10 @@
 import {
   WebSocketGateway,
   SubscribeMessage,
-  MessageBody,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { SocketsService } from './sockets.service';
 import { CreateSocketDto } from './dto/create-socket.dto';
-import { UpdateSocketDto } from './dto/update-socket.dto';
 import { AuthService } from '../auth/auth.service';
 import { RoomsService } from '../rooms/rooms.service';
 
@@ -39,9 +37,12 @@ export class SocketsGateway {
 
       const { users } = await this.rooms.findOne(createSocketDto.room.id);
 
+      let emitter = this.server;
       users.forEach(({ id }: { id: number }) => {
-        this.server.to(String(id)).emit(event, data);
+        emitter = emitter.to(String(id));
       });
+
+      emitter.emit(event, data);
     }
   }
 
@@ -62,18 +63,8 @@ export class SocketsGateway {
     client.join(data);
   }
 
-  @SubscribeMessage('findOneSocket')
-  findOne(@MessageBody() id: number) {
-    return this.socketsService.findOne(id);
-  }
-
-  @SubscribeMessage('updateSocket')
-  update(@MessageBody() updateSocketDto: UpdateSocketDto) {
-    return this.socketsService.update(updateSocketDto.id, updateSocketDto);
-  }
-
-  @SubscribeMessage('removeSocket')
-  remove(@MessageBody() id: number) {
-    return this.socketsService.remove(id);
+  @SubscribeMessage('disconnect')
+  disconnect(client: any, data: string) {
+    client.disconnect(data);
   }
 }

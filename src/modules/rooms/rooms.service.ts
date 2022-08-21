@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityNotFoundError, Repository, UpdateResult } from 'typeorm';
 import { Room } from './entities/room.entity';
 import {
+  MessageInterface,
   PaginationInterface,
   PaginationMetaInterface,
 } from 'src/ts/interfaces';
@@ -17,6 +18,7 @@ import { DEFAULT_PAGINATION_CONFIG } from 'src/ts/consts';
 import { AddUserToRoomDto } from './dto/add-user-to-room.dto';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
+import { MessagesService } from '../messages/messages.service';
 
 @Injectable()
 export class RoomsService {
@@ -24,6 +26,7 @@ export class RoomsService {
     @InjectRepository(Room)
     private roomsRepository: Repository<Room>,
     private usersService: UsersService,
+    private messagesService: MessagesService,
   ) {}
 
   async create(createRoomDto: CreateRoomDto, user: User): Promise<Room> {
@@ -89,14 +92,14 @@ export class RoomsService {
   async findAll(
     pagination: PaginationMetaInterface,
     user: User,
-  ): Promise<PaginationInterface<Room>> {
+  ): Promise<PaginationInterface<Room & { lastMessage: MessageInterface }>> {
     const { itemsPerPage, page } = {
       ...DEFAULT_PAGINATION_CONFIG,
       ...pagination,
     };
     const take = itemsPerPage;
     const skip = (page - 1) * itemsPerPage;
-    const items = await this.roomsRepository.find({
+    const records = await this.roomsRepository.find({
       take,
       skip,
       order: {
@@ -109,6 +112,7 @@ export class RoomsService {
       },
     });
 
+    const items = await this.addLastMessage(records);
     const total = await this.roomsRepository.count();
 
     return {
@@ -119,6 +123,13 @@ export class RoomsService {
         total,
       },
     };
+  }
+
+  private async addLastMessage(records: any) {
+    for (const item of records) {
+      item.lastMessage = await this.messagesService.getRoomLastMessage(item.id);
+    }
+    return records;
   }
 
   async findOne(id: number): Promise<Room> {
