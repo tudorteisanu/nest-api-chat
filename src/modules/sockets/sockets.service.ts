@@ -9,7 +9,6 @@ export class SocketsService {
 
   async create(createSocketDto: CreateSocketDto) {
     const event = 'addMessage';
-    console.log(createSocketDto);
     const data = await this.messageService.create(createSocketDto);
     return { event, data };
   }

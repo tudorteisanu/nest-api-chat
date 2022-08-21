@@ -1,0 +1,1 @@
+export { PaginationParamsApiDocs } from './pagination';

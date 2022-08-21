@@ -5,5 +5,5 @@ export class AddUserToRoomDto {
   @IsNotEmpty()
   @IsNumber()
   @ApiProperty()
-  id: number;
+  userId: number;
 }

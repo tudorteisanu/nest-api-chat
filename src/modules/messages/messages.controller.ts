@@ -11,9 +11,10 @@ import {
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { MessageInterface, PaginationInterface } from 'src/ts/interfaces';
 import { UpdateResult } from 'typeorm';
+import { PaginationParamsApiDocs } from '../../decorators';
 
 @ApiBearerAuth()
 @ApiTags('messages')
@@ -29,20 +30,7 @@ export class MessagesController {
   }
 
   @Get()
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    description: 'page',
-    schema: { oneOf: [{ type: 'string' }, { type: 'integer' }] },
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'itemsPerPage',
-    required: false,
-    description: 'Items per page',
-    schema: { oneOf: [{ type: 'string' }, { type: 'integer' }] },
-    example: 10,
-  })
+  @PaginationParamsApiDocs()
   async findAll(
     @Query('roomId') roomId: string,
     @Query('itemsPerPage') itemsPerPage = 10,

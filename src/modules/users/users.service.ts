@@ -7,7 +7,7 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
-import { EntityMetadataNotFoundError, Repository } from 'typeorm';
+import { EntityMetadataNotFoundError, ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 
@@ -45,6 +45,23 @@ export class UsersService {
 
   public findAll() {
     return this.usersRepository.find();
+  }
+
+  public search(searchString: string) {
+    console.log(searchString);
+    return this.usersRepository.find({
+      where: [
+        { firstName: ILike(`%${searchString}%`) },
+        { lastName: ILike(`%${searchString}%`) },
+        { email: ILike(`%${searchString}%`) },
+      ],
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
   }
 
   public findOne(id: number) {

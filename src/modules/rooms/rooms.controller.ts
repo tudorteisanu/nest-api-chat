@@ -7,15 +7,17 @@ import {
   Param,
   Delete,
   Query,
+  Req,
 } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PaginationInterface } from '../../ts/interfaces';
 import { UpdateResult } from 'typeorm';
 import { Room } from './entities/room.entity';
 import { AddUserToRoomDto } from './dto/add-user-to-room.dto';
+import { PaginationParamsApiDocs } from 'src/decorators';
 
 @ApiBearerAuth()
 @ApiTags('rooms')
@@ -24,11 +26,15 @@ export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
   @Post()
-  create(@Body() createRoomDto: CreateRoomDto) {
-    return this.roomsService.create(createRoomDto);
+  create(
+    @Body() createRoomDto: CreateRoomDto,
+    @Req() request: Request & { user: any },
+  ) {
+    const { user } = request;
+    return this.roomsService.create(createRoomDto, user);
   }
 
-  @Post(':id/addUser')
+  @Post(':id/add-user')
   addUserToRoom(
     @Param('id') roomId: number,
     @Body() createRoomDto: AddUserToRoomDto,
@@ -36,7 +42,7 @@ export class RoomsController {
     return this.roomsService.addUserToRoom(roomId, createRoomDto);
   }
 
-  @Post(':id/removeUser')
+  @Delete(':id/remove-user')
   removeUserToRoom(
     @Param('id') roomId: number,
     @Body() createRoomDto: AddUserToRoomDto,
@@ -45,25 +51,14 @@ export class RoomsController {
   }
 
   @Get()
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    description: 'page',
-    schema: { oneOf: [{ type: 'string' }, { type: 'integer' }] },
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'itemsPerPage',
-    required: false,
-    description: 'Items per page',
-    schema: { oneOf: [{ type: 'string' }, { type: 'integer' }] },
-    example: 10,
-  })
+  @PaginationParamsApiDocs()
   async findAll(
     @Query('itemsPerPage') itemsPerPage = 10,
     @Query('page') page = 1,
+    @Req() request: Request & { user: any },
   ): Promise<PaginationInterface<Room>> {
-    return await this.roomsService.findAll({ itemsPerPage, page });
+    const { user } = request;
+    return await this.roomsService.findAll({ itemsPerPage, page }, user);
   }
 
   @Get(':id')

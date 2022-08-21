@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -25,9 +26,19 @@ export class RoomsService {
     private usersService: UsersService,
   ) {}
 
-  async create(createRoomDto: CreateRoomDto): Promise<Room> {
+  async create(createRoomDto: CreateRoomDto, user: User): Promise<Room> {
     const newRoom = await this.roomsRepository.create(createRoomDto);
-    return await this.roomsRepository.save(newRoom);
+    newRoom.users = [user];
+    const createdUser = await this.roomsRepository.save(newRoom, {
+      transaction: true,
+    });
+    return {
+      ...createdUser,
+      users: createdUser.users.map((user: User) => {
+        delete user.password;
+        return user;
+      }),
+    };
   }
 
   async addUserToRoom(roomId: number, data: AddUserToRoomDto): Promise<void> {
@@ -38,10 +49,14 @@ export class RoomsService {
       },
     });
 
-    const user = await this.usersService.findOne(data.id);
+    const user = await this.usersService.findOne(data.userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    if (room.users.some((user: User) => user.id === data.userId)) {
+      throw new BadRequestException('User already exists');
     }
 
     room.users = [...room.users, user];
@@ -59,7 +74,9 @@ export class RoomsService {
       },
     });
 
-    const userIndex = room.users.findIndex((user: User) => user.id === data.id);
+    const userIndex = room.users.findIndex(
+      (user: User) => user.id === data.userId,
+    );
 
     if (userIndex !== -1) {
       room.users.splice(userIndex, 1);
@@ -71,6 +88,7 @@ export class RoomsService {
 
   async findAll(
     pagination: PaginationMetaInterface,
+    user: User,
   ): Promise<PaginationInterface<Room>> {
     const { itemsPerPage, page } = {
       ...DEFAULT_PAGINATION_CONFIG,
@@ -83,6 +101,11 @@ export class RoomsService {
       skip,
       order: {
         id: 'ASC',
+      },
+      where: {
+        users: {
+          id: user.id,
+        },
       },
     });
 
@@ -104,6 +127,15 @@ export class RoomsService {
         where: { id },
         relations: {
           users: true,
+        },
+        select: {
+          users: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+          id: true,
+          name: true,
         },
       });
     } catch (e) {
