@@ -1,33 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateSocketDto } from './dto/create-socket.dto';
-import { UpdateSocketDto } from './dto/update-socket.dto';
 import { MessagesService } from '../messages/messages.service';
+import { SocketEvents } from '@/ts/enum';
+import { AuthService } from '@modules/auth/auth.service';
 
 @Injectable()
 export class SocketsService {
-  constructor(private messageService: MessagesService) {}
+  constructor(
+    private messageService: MessagesService,
+    private authService: AuthService,
+  ) {}
 
   async create(createSocketDto: CreateSocketDto) {
-    const event = 'addMessage';
+    const event = SocketEvents.AddMessage;
     const data = await this.messageService.create(createSocketDto);
     return { event, data };
   }
 
-  findAll() {
-    return `This action returns all sockets`;
-  }
+  async removeMessage(messageId: number, token: string) {
+    const message = await this.messageService.findOne(messageId);
 
-  findOne(id: number) {
-    return `This action returns a #${id} socket`;
-  }
+    if (!message) {
+      throw new BadRequestException('Message not exists');
+    }
 
-  update(id: number, updateSocketDto: UpdateSocketDto) {
-    return `This action updates a #${id} ${updateSocketDto} socket`;
-  }
+    const author = await this.authService.getUserByToken(token);
 
-  async remove(id: number) {
-    const event = 'removeMessage';
-    const data = await this.messageService.remove(id);
-    return { event, data };
+    if (message.author.id !== author.id) {
+      throw new ForbiddenException();
+    }
+
+    const event = SocketEvents.DeleteMessage;
+    await this.messageService.remove(messageId);
+    return {
+      event,
+      data: {
+        messageId,
+      },
+      roomId: message.room.id,
+    };
   }
 }

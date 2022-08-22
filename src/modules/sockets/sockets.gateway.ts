@@ -5,8 +5,14 @@ import {
 } from '@nestjs/websockets';
 import { SocketsService } from './sockets.service';
 import { CreateSocketDto } from './dto/create-socket.dto';
-import { AuthService } from '../auth/auth.service';
-import { RoomsService } from '../rooms/rooms.service';
+import { RoomsService } from '@modules/rooms/rooms.service';
+import { AuthService } from '@modules/auth/auth.service';
+import { SocketEvents } from '@/ts/enum';
+
+interface EmitterInterface {
+  event: string;
+  data: any;
+}
 
 @WebSocketGateway({
   cors: {
@@ -23,48 +29,62 @@ export class SocketsGateway {
     private rooms: RoomsService,
   ) {}
 
-  @SubscribeMessage('sendMessage')
-  async create(client: any, createSocketDto: CreateSocketDto) {
-    if (client.handshake.auth?.token) {
-      const author = await this.authService.getUserByToken(
-        client.handshake.auth.token,
-      );
-
-      const { event, data } = await this.socketsService.create({
-        ...createSocketDto,
-        author,
-      });
-
-      const { users } = await this.rooms.findOne(createSocketDto.room.id);
-
-      let emitter = this.server;
-      users.forEach(({ id }: { id: number }) => {
-        emitter = emitter.to(String(id));
-      });
-
-      emitter.emit(event, data);
-    }
-  }
-
-  @SubscribeMessage('connection')
+  @SubscribeMessage(SocketEvents.Connection)
   handleConnection(client: any) {
     if (!client.handshake.auth) {
       client.disconnect();
     }
   }
 
-  @SubscribeMessage('findAllSockets')
-  findAll() {
-    return this.socketsService.findAll();
-  }
-
-  @SubscribeMessage('join')
+  @SubscribeMessage(SocketEvents.Join)
   join(client: any, data: string) {
     client.join(data);
   }
 
-  @SubscribeMessage('disconnect')
+  @SubscribeMessage(SocketEvents.Disconnect)
   disconnect(client: any, data: string) {
     client.disconnect(data);
+  }
+
+  @SubscribeMessage(SocketEvents.SendMessage)
+  async create(client: any, createSocketDto: CreateSocketDto) {
+    if (client.handshake.auth?.token) {
+      const author = await this.authService.getUserByToken(
+        client.handshake.auth.token,
+      );
+
+      const payload: EmitterInterface = await this.socketsService.create({
+        ...createSocketDto,
+        author,
+      });
+
+      await this.emitToRoomUsers(createSocketDto.room.id, payload);
+    }
+  }
+
+  @SubscribeMessage(SocketEvents.DeleteMessage)
+  async delete(client: any, messageId: number) {
+    const token = client.handshake.auth?.token;
+    if (!token) {
+      return;
+    }
+    const { roomId, ...payload }: EmitterInterface & { roomId: number } =
+      await this.socketsService.removeMessage(messageId, token);
+
+    await this.emitToRoomUsers(roomId, payload);
+  }
+
+  async emitToRoomUsers(
+    roomId: number,
+    { event, data }: EmitterInterface,
+  ): Promise<void> {
+    const { users } = await this.rooms.findOne(roomId);
+
+    let emitter = this.server;
+    users.forEach(({ id }: { id: number }) => {
+      emitter = emitter.to(String(id));
+    });
+
+    emitter.emit(event, data);
   }
 }

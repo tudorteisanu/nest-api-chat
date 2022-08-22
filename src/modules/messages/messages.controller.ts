@@ -14,7 +14,8 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { MessageInterface, PaginationInterface } from 'src/ts/interfaces';
 import { UpdateResult } from 'typeorm';
-import { PaginationParamsApiDocs } from '../../decorators';
+import { PaginationParamsApiDocs } from '@/decorators';
+import { MessageEntity } from '@modules/messages/entities/message.entity';
 
 @ApiBearerAuth()
 @ApiTags('messages')
@@ -25,7 +26,7 @@ export class MessagesController {
   @Post()
   async create(
     @Body() createMessageDto: CreateMessageDto,
-  ): Promise<MessageInterface> {
+  ): Promise<CreateMessageDto & MessageEntity> {
     return await this.messagesService.create(createMessageDto);
   }
 
@@ -43,7 +44,7 @@ export class MessagesController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<MessageInterface> {
+  async findOne(@Param('id') id: string): Promise<MessageEntity> {
     return await this.messagesService.findOne(+id);
   }
 
@@ -56,7 +57,7 @@ export class MessagesController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<MessageInterface> {
+  async remove(@Param('id') id: string): Promise<MessageEntity> {
     return await this.messagesService.remove(+id);
   }
 }
