@@ -1,0 +1,41 @@
+on:
+  push:
+    branches: 
+       - dev
+
+name: "Deploy dev"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Check out
+        uses: actions/checkout@v2
+     
+      - name: Login to Github Packages
+        uses: docker/login-action@v1
+        with:
+          registry: docker.pkg.github.com
+          username: $GITHUB_ACTOR
+          password: ${{ secrets.DOCKER_AUTH_TOKEN }}
+      - name: Build image and push to GitHub Packages
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          tags: "docker.pkg.github.com/tudorteisanu/nest-api-chat/dev"
+          push: true
+
+      - name: Add ssh key
+        run: |
+          set -eu
+          mkdir "$HOME/.ssh"
+          echo "${{ secrets.key }}" > "$HOME/.ssh/key"
+          chmod 600 "$HOME/.ssh/key"
+      - name: Update services
+        shell: bash
+        env:
+          USER: ${{ secrets.user }}
+          HOST: ${{ secrets.host }}
+          DIST: ${{ secrets.dist }}
+        run: ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no $USER@$HOST "${DIST}/setup.sh"
