@@ -5,7 +5,7 @@
       "name": "app",
       "out_file": "/tmp/workers.log",
       "log_date_format": "MM/DD/YYYY HH:mm:ss",
-      "script": "main.js",
+      "script": "dist/main.js",
       "env": {
         "NODE_ENV": "production",
         "APP_ENV": "production"

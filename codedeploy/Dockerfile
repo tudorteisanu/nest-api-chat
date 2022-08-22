@@ -26,7 +26,7 @@ ENV NODE_ENV production
 
 RUN yarn global add pm2
 
-COPY --from=builder /app/dist/ .
+COPY --from=builder /app/dist/ ./dist
 COPY --from=builder /app/package.json/ ./package.json
 COPY --from=builder /app/codedeploy/pm2/ .
 
