@@ -19,6 +19,7 @@ export class MessageEntity {
 
   @Column()
   message: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

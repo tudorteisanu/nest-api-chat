@@ -5,8 +5,13 @@ const getDbConfig: any = () => ({
   username: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '12345678',
   database: process.env.DB_NAME || 'nestjs',
-  autoLoadEntities: Boolean(Number(process.env.DB_AUTOLOADENTITIES)),
-  synchronize: process.env.APP_ENV === 'development',
+  entities: ['dist/modules/**/*.entity{.js,.ts}'],
+  migrations: ['dist/migrations/**/*{.js,.ts}'],
+  autoLoadEntities: false,
+  synchronize: false,
+  cli: {
+    migrationsDir: 'src/migrations',
+  },
 });
 
 export default getDbConfig;
