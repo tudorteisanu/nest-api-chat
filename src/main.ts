@@ -15,7 +15,10 @@ async function bootstrap() {
       exceptionFactory: (errors: ValidationError[]) => {
         return new UnprocessableEntityException({
           errors: errors.reduce((errors: any, error: any) => {
-            errors[error.property] = Object.values(error.constraints);
+            errors[error.property] = Object.values(error.constraints).slice(
+              0,
+              1,
+            );
             return errors;
           }, {}),
           statusCode: 422,

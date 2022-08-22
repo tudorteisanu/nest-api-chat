@@ -13,11 +13,12 @@ import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { PaginationInterface } from '../../ts/interfaces';
+import { PaginationInterface } from '@/ts/interfaces';
 import { UpdateResult } from 'typeorm';
 import { Room } from './entities/room.entity';
 import { AddUserToRoomDto } from './dto/add-user-to-room.dto';
 import { PaginationParamsApiDocs } from 'src/decorators';
+import { DEFAULT_PAGINATION_CONFIG } from '@/ts/consts';
 
 @ApiBearerAuth()
 @ApiTags('rooms')
@@ -53,8 +54,9 @@ export class RoomsController {
   @Get()
   @PaginationParamsApiDocs()
   async findAll(
-    @Query('itemsPerPage') itemsPerPage = 10,
-    @Query('page') page = 1,
+    @Query('itemsPerPage')
+    itemsPerPage = DEFAULT_PAGINATION_CONFIG.itemsPerPage,
+    @Query('page') page = DEFAULT_PAGINATION_CONFIG.page,
     @Req() request: Request & { user: any },
   ): Promise<PaginationInterface<Room>> {
     const { user } = request;

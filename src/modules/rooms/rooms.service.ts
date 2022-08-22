@@ -116,7 +116,9 @@ export class RoomsService {
     const total = await this.roomsRepository.count();
 
     return {
-      data: items.reverse(),
+      data: items.sort(
+        (a, b) => b.lastMessage?.createdAt - a.lastMessage?.createdAt,
+      ),
       meta: {
         page,
         itemsPerPage,
@@ -174,8 +176,9 @@ export class RoomsService {
   async remove(id: number): Promise<Room> {
     try {
       const room = await this.roomsRepository.findOneByOrFail({ id });
-      return await this.roomsRepository.remove(room);
+      return await this.roomsRepository.remove(room, {});
     } catch (e) {
+      console.log(e);
       if (e instanceof EntityNotFoundError) {
         throw new NotFoundException('Room not found');
       }

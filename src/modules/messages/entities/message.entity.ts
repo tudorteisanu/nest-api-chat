@@ -25,7 +25,7 @@ export class MessageEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Room, (room) => room.messages)
+  @ManyToOne(() => Room, (room) => room.messages, { onDelete: 'CASCADE' })
   room: Room;
 
   @ManyToOne(() => User, (user) => user.messages)

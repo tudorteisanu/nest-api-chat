@@ -17,7 +17,9 @@ export class Room {
   @Column()
   name: string;
 
-  @OneToMany(() => MessageEntity, (message: MessageEntity) => message.room)
+  @OneToMany(() => MessageEntity, (message: MessageEntity) => message.room, {
+    onDelete: 'CASCADE',
+  })
   messages: MessageEntity[];
 
   @ManyToMany(() => User, { cascade: true })
