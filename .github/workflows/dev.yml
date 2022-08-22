@@ -25,6 +25,7 @@ jobs:
           context: .
           tags: "docker.pkg.github.com/tudorteisanu/nest-api-chat/dev"
           push: true
+          file: "codedeploy/Dockerfile"
 
       - name: Add ssh key
         run: |
